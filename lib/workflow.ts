@@ -1,7 +1,5 @@
-import { EventEmitter } from 'events'
-import {AppointmentResponse, Encounter, Practitioner, Schedule, Slot} from "fhir/r4";
-import { Appointment } from "fhir/r4";
-import {createMachine, interpret} from "xstate";
+import { Appointment, AppointmentResponse, Encounter, Schedule, Slot} from "fhir/r4";
+import { createMachine, interpret } from "xstate";
 import crypto from "crypto";
 
 class FSM {
@@ -18,99 +16,6 @@ class FSM {
   }
 }
 
-const ee = new EventEmitter()
-// const fsm =  new FSM({
-//   id: 'app-workflow',
-//   initial: 'draft',
-//   context: {
-//     appointment: null,
-//     slot: null,
-//     response: null,
-//     encounter: null
-//   },
-//   states: {
-//     draft: {
-//       entry: 'createSchedule',
-//       on: {
-//         READY: 'ready',
-//         REQUEST: 'requested',
-//         CANCEL: 'cancelled'
-//       }
-//     },
-//     ready: {
-//       on: {
-//         RESOLVE: 'in-progress'
-//       }
-//     },
-//     requested: {
-//       on: {
-//         ACCEPT: 'accepted',
-//         REJECT: 'rejected',
-//         RECEIVE: 'received'
-//       }
-//     },
-//     received: {
-//       on: {
-//         ACCEPT: 'accepted',
-//         REJECT: 'rejected'
-//       }
-//     },
-//     rejected: {
-//       on: {
-//         STOP: 'done'
-//       }
-//     },
-//     accepted: {
-//       on: {
-//         RESOLVE: 'in-progress'
-//       }
-//     },
-//     'in-progress': {
-//       on: {
-//         HOLD: 'on-hold',
-//         COMPLETE: 'completed',
-//         FAILED: 'failed'
-//       }
-//     },
-//     completed: {
-//       on: {
-//         STOP: 'done'
-//       }
-//     },
-//     failed: {
-//       on: {
-//         STOP: 'done'
-//       }
-//     },
-//     'on-hold': {
-//       on: {
-//         UNHOLD: 'in-progress'
-//       }
-//     },
-//     cancelled: {
-//       on: {
-//         STOP: 'done'
-//       }
-//     },
-//     done: {
-//       type: 'final'
-//     }
-//   }
-// }, {
-//   actions: {
-//     createSchedule: (context: any, event: any) => {
-//       // prepare free slot
-//       const slot: Slot = {
-//         resourceType: 'Slot',
-//         status: 'free',
-//         end: "", schedule: undefined,
-//         start: '2021-01-01T09:00:00Z'
-//       }
-//       console.log("schedule is created/published", context, event)
-//     }
-//   }
-// })
-
 export class AppointmentWorkflow {
   readonly name: string
   readonly createdAt: Date
@@ -119,7 +24,6 @@ export class AppointmentWorkflow {
   private slot: Slot | null = null
   private response: AppointmentResponse | null = null
   private encounter: Encounter | null = null
-  ee: EventEmitter
   fsm: any
   constructor (name: string) {
     this.name = name
@@ -242,9 +146,6 @@ export class AppointmentWorkflow {
         processRequest: (context: any, event: any) => {
           context.slot.status = "busy-tentative"
         },
-        signal(context: any, event: any) {
-          ee.emit('ctx', context)
-        }
       }
     })
   }

@@ -17,98 +17,7 @@ class FSM {
 
 }
 
-const ee = new EventEmitter(); // const fsm =  new FSM({
-//   id: 'app-workflow',
-//   initial: 'draft',
-//   context: {
-//     appointment: null,
-//     slot: null,
-//     response: null,
-//     encounter: null
-//   },
-//   states: {
-//     draft: {
-//       entry: 'createSchedule',
-//       on: {
-//         READY: 'ready',
-//         REQUEST: 'requested',
-//         CANCEL: 'cancelled'
-//       }
-//     },
-//     ready: {
-//       on: {
-//         RESOLVE: 'in-progress'
-//       }
-//     },
-//     requested: {
-//       on: {
-//         ACCEPT: 'accepted',
-//         REJECT: 'rejected',
-//         RECEIVE: 'received'
-//       }
-//     },
-//     received: {
-//       on: {
-//         ACCEPT: 'accepted',
-//         REJECT: 'rejected'
-//       }
-//     },
-//     rejected: {
-//       on: {
-//         STOP: 'done'
-//       }
-//     },
-//     accepted: {
-//       on: {
-//         RESOLVE: 'in-progress'
-//       }
-//     },
-//     'in-progress': {
-//       on: {
-//         HOLD: 'on-hold',
-//         COMPLETE: 'completed',
-//         FAILED: 'failed'
-//       }
-//     },
-//     completed: {
-//       on: {
-//         STOP: 'done'
-//       }
-//     },
-//     failed: {
-//       on: {
-//         STOP: 'done'
-//       }
-//     },
-//     'on-hold': {
-//       on: {
-//         UNHOLD: 'in-progress'
-//       }
-//     },
-//     cancelled: {
-//       on: {
-//         STOP: 'done'
-//       }
-//     },
-//     done: {
-//       type: 'final'
-//     }
-//   }
-// }, {
-//   actions: {
-//     createSchedule: (context: any, event: any) => {
-//       // prepare free slot
-//       const slot: Slot = {
-//         resourceType: 'Slot',
-//         status: 'free',
-//         end: "", schedule: undefined,
-//         start: '2021-01-01T09:00:00Z'
-//       }
-//       console.log("schedule is created/published", context, event)
-//     }
-//   }
-// })
-
+const ee = new EventEmitter();
 class AppointmentWorkflow {
   constructor(name) {
     this.name = void 0;
@@ -250,7 +159,7 @@ class AppointmentWorkflow {
         },
 
         signal(context, event) {
-          ee.emit('ctx', context);
+          ee.emit('createSchedule', context);
         }
 
       }
