@@ -9,6 +9,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "noEmit": true,
+    "noImplicitAny": false,
   },
   "include": ["node_modules/@types/fhir/r4.d.ts"]
 }

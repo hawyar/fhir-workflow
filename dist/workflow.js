@@ -1,1 +1,269 @@
-import{interpret as e,createMachine as t}from"xstate";import n from"events";function i(){return i=Object.assign?Object.assign.bind():function(e){for(var t=1;t<arguments.length;t++){var n=arguments[t];for(var i in n)Object.prototype.hasOwnProperty.call(n,i)&&(e[i]=n[i])}return e},i.apply(this,arguments)}var o=function(e){this.machine=void 0,this.machine=t(i({predictableActionArguments:!0,id:"fhir-workflow-fsm"},e,{strict:!0}))},s=function(e){this.resourceType=void 0,this.resource=void 0,this.intent=void 0,this.status=void 0,this.createdAt=void 0,this.resourceType="Task",this.resource=i({intent:"unknown",status:"draft",resourceType:this.resourceType},e),this.createdAt=new Date,this.intent="unknown",this.status="draft"},r=new n,a=/*#__PURE__*/function(){function t(t){var n;this.name=void 0,this.createdAt=void 0,this.fsm=void 0,this.task=void 0,this.ee=void 0,this.name=t,this.createdAt=new Date,this.fsm=(n=new o({id:"task",initial:"draft",context:{retries:0},states:{draft:{on:{READY:"ready",REQUEST:"requested",CANCEL:"cancelled"}},ready:{on:{RESOLVE:"in-progress"}},requested:{on:{ACCEPT:"accepted",REJECT:"rejected",RECEIVE:"received"}},received:{on:{ACCEPT:"accepted",REJECT:"rejected"}},rejected:{on:{STOP:"done"}},accepted:{on:{RESOLVE:"in-progress"}},"in-progress":{on:{HOLD:"on-hold",COMPLETE:"completed",FAILED:"failed"}},completed:{on:{STOP:"done"}},failed:{on:{STOP:"done"}},"on-hold":{on:{UNHOLD:"in-progress"}},cancelled:{on:{STOP:"done"}},done:{type:"final"}}}),e(n.machine)),this.task=new s({intent:"unknown",status:"draft"}),this.ee=r}var n=t.prototype;return n.start=function(){this.ee.emit("start",this),this.fsm.start()},n.on=function(e,t){this.ee.on(e,t)},t}();function d(e){return void 0!==e&&""!==e||(e="my-workflow"),new a(e)}export{a as Workflow,d as workflow};
+import { EventEmitter } from 'events';
+import { createMachine, interpret } from 'xstate';
+import crypto from 'crypto';
+
+class FSM {
+  constructor(config, actions) {
+    this.machine = void 0;
+    this.service = void 0;
+    this.machine = createMachine({
+      predictableActionArguments: true,
+      id: 'fsm',
+      strict: true,
+      ...config
+    }, actions);
+    this.service = interpret(this.machine);
+  }
+
+}
+
+const ee = new EventEmitter(); // const fsm =  new FSM({
+//   id: 'app-workflow',
+//   initial: 'draft',
+//   context: {
+//     appointment: null,
+//     slot: null,
+//     response: null,
+//     encounter: null
+//   },
+//   states: {
+//     draft: {
+//       entry: 'createSchedule',
+//       on: {
+//         READY: 'ready',
+//         REQUEST: 'requested',
+//         CANCEL: 'cancelled'
+//       }
+//     },
+//     ready: {
+//       on: {
+//         RESOLVE: 'in-progress'
+//       }
+//     },
+//     requested: {
+//       on: {
+//         ACCEPT: 'accepted',
+//         REJECT: 'rejected',
+//         RECEIVE: 'received'
+//       }
+//     },
+//     received: {
+//       on: {
+//         ACCEPT: 'accepted',
+//         REJECT: 'rejected'
+//       }
+//     },
+//     rejected: {
+//       on: {
+//         STOP: 'done'
+//       }
+//     },
+//     accepted: {
+//       on: {
+//         RESOLVE: 'in-progress'
+//       }
+//     },
+//     'in-progress': {
+//       on: {
+//         HOLD: 'on-hold',
+//         COMPLETE: 'completed',
+//         FAILED: 'failed'
+//       }
+//     },
+//     completed: {
+//       on: {
+//         STOP: 'done'
+//       }
+//     },
+//     failed: {
+//       on: {
+//         STOP: 'done'
+//       }
+//     },
+//     'on-hold': {
+//       on: {
+//         UNHOLD: 'in-progress'
+//       }
+//     },
+//     cancelled: {
+//       on: {
+//         STOP: 'done'
+//       }
+//     },
+//     done: {
+//       type: 'final'
+//     }
+//   }
+// }, {
+//   actions: {
+//     createSchedule: (context: any, event: any) => {
+//       // prepare free slot
+//       const slot: Slot = {
+//         resourceType: 'Slot',
+//         status: 'free',
+//         end: "", schedule: undefined,
+//         start: '2021-01-01T09:00:00Z'
+//       }
+//       console.log("schedule is created/published", context, event)
+//     }
+//   }
+// })
+
+class AppointmentWorkflow {
+  constructor(name) {
+    this.name = void 0;
+    this.createdAt = void 0;
+    this.hasStarted = false;
+    this.appointment = null;
+    this.slot = null;
+    this.response = null;
+    this.encounter = null;
+    this.ee = void 0;
+    this.fsm = void 0;
+    this.name = name;
+    this.createdAt = new Date();
+    this.hasStarted = false;
+    this.slot = null;
+    this.appointment = null;
+    this.response = null;
+    this.encounter = null;
+    this.ee = ee;
+    this.fsm = new FSM({
+      id: 'app-workflow',
+      initial: 'draft',
+      context: {
+        appointment: null,
+        slot: null,
+        response: null,
+        encounter: null
+      },
+      states: {
+        draft: {
+          entry: ['createSchedule', 'signal'],
+          on: {
+            READY: 'ready',
+            REQUEST: 'requested',
+            CANCEL: 'cancelled'
+          }
+        },
+        ready: {
+          on: {
+            RESOLVE: 'in-progress'
+          }
+        },
+        requested: {
+          entry: ['requestAppointment', 'processRequest', 'signal'],
+          on: {
+            ACCEPT: 'accepted',
+            REJECT: 'rejected',
+            RECEIVE: 'received'
+          }
+        },
+        received: {
+          on: {
+            ACCEPT: 'accepted',
+            REJECT: 'rejected'
+          }
+        },
+        rejected: {
+          on: {
+            STOP: 'done'
+          }
+        },
+        accepted: {
+          on: {
+            RESOLVE: 'in-progress'
+          }
+        },
+        'in-progress': {
+          on: {
+            HOLD: 'on-hold',
+            COMPLETE: 'completed',
+            FAILED: 'failed'
+          }
+        },
+        completed: {
+          on: {
+            STOP: 'done'
+          }
+        },
+        failed: {
+          on: {
+            STOP: 'done'
+          }
+        },
+        'on-hold': {
+          on: {
+            UNHOLD: 'in-progress'
+          }
+        },
+        cancelled: {
+          on: {
+            STOP: 'done'
+          }
+        },
+        done: {
+          type: 'final'
+        }
+      }
+    }, {
+      actions: {
+        createSchedule: (context, event) => {
+          const schedule = {
+            id: crypto.randomBytes(16).toString('hex'),
+            actor: [{
+              reference: `Practitioner/123`
+            }],
+            resourceType: 'Schedule'
+          };
+          const slot = {
+            id: crypto.randomBytes(6).toString("hex"),
+            resourceType: 'Slot',
+            status: 'free',
+            end: "",
+            schedule: {
+              reference: `Schedule/${schedule.id}`
+            },
+            start: '2021-01-01T09:00:00Z'
+          };
+          context.slot = slot;
+        },
+        requestAppointment: (context, event) => {
+          const appointment = {
+            participant: [{
+              status: 'accepted',
+              actor: {
+                reference: `Patient/${crypto.randomBytes(6).toString("hex")}`
+              }
+            }],
+            resourceType: 'Appointment',
+            status: 'proposed',
+            slot: [{
+              reference: `Slot/${context.slot.id}`
+            }]
+          };
+          appointment.status = 'pending';
+          context.appointment = appointment;
+        },
+        processRequest: (context, event) => {
+          context.slot.status = "busy-tentative";
+        },
+
+        signal(context, event) {
+          ee.emit('ctx', context);
+        }
+
+      }
+    });
+  }
+
+}
+function scheduleAppointment(name) {
+  const workflow = new AppointmentWorkflow(name || "my-workflow");
+  const current = workflow.fsm.service;
+  current.start();
+  current.send('REQUEST');
+}
+
+export { AppointmentWorkflow, scheduleAppointment };
+//# sourceMappingURL=workflow.js.map

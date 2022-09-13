@@ -2,17 +2,19 @@
   "name": "fhir-workflow",
   "description": "Common FHIR workflows",
   "version": "1.0.0",
-  "main": "./dist/workflow.cjs",
   "type": "module",
-  "source": "src/workflow.ts",
+  "source": "lib/workflow.ts",
+  "main": "./dist/workflow.cjs",
+  "module": "./dist/workflow.js",
   "exports": {
     "require": "./dist/workflow.cjs",
     "import": "./dist/workflow.js"
   },
-  "module": "./dist/workflow.js",
   "scripts": {
     "format": "ts-standard --fix",
-    "build": "npm run format && microbundle --sourcemap false --format cjs,esm --generateTypes false"
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && tap --no-coverage --reporter=specy -J --color",
+    "build": "rimraf ./dist && microbundle --format cjs,esm --generateTypes false --target node"
   },
   "ts-standard": {
     "ignore": [
@@ -25,8 +27,12 @@
     "xstate": "^4.33.6"
   },
   "devDependencies": {
+    "@babel/core": "^7.19.0",
     "@types/node": "^18.7.16",
+    "esbuild": "^0.15.7",
     "microbundle": "^0.15.1",
+    "rimraf": "^3.0.2",
+    "tap": "^16.3.0",
     "ts-standard": "^11.0.0"
   }
 }

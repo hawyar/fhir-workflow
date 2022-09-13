@@ -1,27 +1,25 @@
-var events = require('events');
-var xstate = require('xstate');
-var crypto = require('crypto');
-
-function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
-
-var crypto__default = /*#__PURE__*/_interopDefaultLegacy(crypto);
+import { EventEmitter } from 'events'
+import {AppointmentResponse, Encounter, Practitioner, Schedule, Slot} from "fhir/r4";
+import { Appointment } from "fhir/r4";
+import {createMachine, interpret} from "xstate";
+import crypto from "crypto";
 
 class FSM {
-  constructor(config, actions) {
-    this.machine = void 0;
-    this.service = void 0;
-    this.machine = xstate.createMachine({
+  machine: any;
+  service: any;
+  constructor (config: any, actions: any) {
+    this.machine = createMachine({
       predictableActionArguments: true,
       id: 'fsm',
       strict: true,
       ...config
     }, actions);
-    this.service = xstate.interpret(this.machine);
+    this.service = interpret(this.machine)
   }
-
 }
 
-const ee = new events.EventEmitter(); // const fsm =  new FSM({
+const ee = new EventEmitter()
+// const fsm =  new FSM({
 //   id: 'app-workflow',
 //   initial: 'draft',
 //   context: {
@@ -113,25 +111,25 @@ const ee = new events.EventEmitter(); // const fsm =  new FSM({
 //   }
 // })
 
-class AppointmentWorkflow {
-  constructor(name) {
-    this.name = void 0;
-    this.createdAt = void 0;
-    this.hasStarted = false;
-    this.appointment = null;
-    this.slot = null;
-    this.response = null;
-    this.encounter = null;
-    this.ee = void 0;
-    this.fsm = void 0;
-    this.name = name;
-    this.createdAt = new Date();
-    this.hasStarted = false;
-    this.slot = null;
-    this.appointment = null;
-    this.response = null;
-    this.encounter = null;
-    this.ee = ee;
+export class AppointmentWorkflow {
+  readonly name: string
+  readonly createdAt: Date
+  private hasStarted: boolean = false
+  private appointment: Appointment | null = null
+  private slot: Slot | null = null
+  private response: AppointmentResponse | null = null
+  private encounter: Encounter | null = null
+  ee: EventEmitter
+  fsm: any
+  constructor (name: string) {
+    this.name = name
+    this.createdAt = new Date()
+    this.hasStarted = false
+    this.slot = null
+    this.appointment = null
+    this.response = null
+    this.encounter = null
+    this.ee = ee
     this.fsm = new FSM({
       id: 'app-workflow',
       initial: 'draft',
@@ -156,7 +154,7 @@ class AppointmentWorkflow {
           }
         },
         requested: {
-          entry: ['requestAppointment', 'processRequest', 'signal'],
+          entry: ['requestAppointment','processRequest', 'signal'],
           on: {
             ACCEPT: 'accepted',
             REJECT: 'rejected',
@@ -212,63 +210,50 @@ class AppointmentWorkflow {
       }
     }, {
       actions: {
-        createSchedule: (context, event) => {
-          const schedule = {
-            id: crypto__default["default"].randomBytes(16).toString('hex'),
-            actor: [{
-              reference: `Practitioner/123`
-            }],
+        createSchedule: (context: any, event: any) => {
+          const schedule: Schedule = {
+            id: crypto.randomBytes(16).toString('hex'),
+            actor: [{ reference: `Practitioner/123` }],
             resourceType: 'Schedule'
-          };
-          const slot = {
-            id: crypto__default["default"].randomBytes(6).toString("hex"),
+          }
+
+          const slot: Slot = {
+            id: crypto.randomBytes(6).toString("hex"),
             resourceType: 'Slot',
             status: 'free',
             end: "",
             schedule: {
-              reference: `Schedule/${schedule.id}`
+                reference: `Schedule/${schedule.id}`
             },
             start: '2021-01-01T09:00:00Z'
-          };
-          context.slot = slot;
+          }
+          context.slot = slot
         },
-        requestAppointment: (context, event) => {
-          const appointment = {
-            participant: [{
-              status: 'accepted',
-              actor: {
-                reference: `Patient/${crypto__default["default"].randomBytes(6).toString("hex")}`
-              }
-            }],
-            resourceType: 'Appointment',
-            status: 'proposed',
-            slot: [{
-              reference: `Slot/${context.slot.id}`
-            }]
-          };
-          appointment.status = 'pending';
-          context.appointment = appointment;
+        requestAppointment: (context: any, event: any) => {
+            const appointment: Appointment = {
+              participant: [{ status: 'accepted', actor: { reference: `Patient/${crypto.randomBytes(6).toString("hex")}` } }],
+              resourceType: 'Appointment',
+              status: 'proposed',
+              slot: [{ reference: `Slot/${context.slot.id}` }]
+            }
+            appointment.status = 'pending'
+            context.appointment = appointment
         },
-        processRequest: (context, event) => {
-          context.slot.status = "busy-tentative";
+        processRequest: (context: any, event: any) => {
+          context.slot.status = "busy-tentative"
         },
-
-        signal(context, event) {
-          ee.emit('ctx', context);
+        signal(context: any, event: any) {
+          ee.emit('ctx', context)
         }
-
       }
-    });
+    })
   }
-
-}
-function scheduleAppointment(name) {
-  const workflow = new AppointmentWorkflow(name || "my-workflow");
-  const current = workflow.fsm.service;
-  current.start();
-  current.send('REQUEST');
 }
 
-exports.AppointmentWorkflow = AppointmentWorkflow;
-exports.scheduleAppointment = scheduleAppointment;
-//# sourceMappingURL=workflow.cjs.map
+export function scheduleAppointment(name: string) {
+  const workflow = new AppointmentWorkflow(name || "my-workflow")
+  const current = workflow.fsm.service
+
+  current.start()
+  current.send('REQUEST')
+}
