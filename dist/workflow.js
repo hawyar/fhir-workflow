@@ -1,6 +1,5 @@
-import { EventEmitter } from 'events';
-import { createMachine, interpret } from 'xstate';
 import crypto from 'crypto';
+import { createMachine, interpret } from 'xstate';
 
 class FSM {
   constructor(config, actions) {
@@ -17,26 +16,25 @@ class FSM {
 
 }
 
-const ee = new EventEmitter();
 class AppointmentWorkflow {
   constructor(name) {
     this.name = void 0;
-    this.createdAt = void 0;
-    this.hasStarted = false;
+    this.id = void 0;
     this.appointment = null;
     this.slot = null;
     this.response = null;
     this.encounter = null;
-    this.ee = void 0;
+    this.createdAt = void 0;
+    this.updatedAt = void 0;
     this.fsm = void 0;
     this.name = name;
+    this.id = crypto.randomBytes(16).toString('hex');
     this.createdAt = new Date();
-    this.hasStarted = false;
+    this.updatedAt = new Date();
     this.slot = null;
     this.appointment = null;
     this.response = null;
     this.encounter = null;
-    this.ee = ee;
     this.fsm = new FSM({
       id: 'app-workflow',
       initial: 'draft',
@@ -48,7 +46,7 @@ class AppointmentWorkflow {
       },
       states: {
         draft: {
-          entry: ['createSchedule', 'signal'],
+          entry: ['createSchedule'],
           on: {
             READY: 'ready',
             REQUEST: 'requested',
@@ -61,7 +59,7 @@ class AppointmentWorkflow {
           }
         },
         requested: {
-          entry: ['requestAppointment', 'processRequest', 'signal'],
+          entry: ['requestAppointment', 'processRequest'],
           on: {
             ACCEPT: 'accepted',
             REJECT: 'rejected',
@@ -156,22 +154,17 @@ class AppointmentWorkflow {
         },
         processRequest: (context, event) => {
           context.slot.status = "busy-tentative";
-        },
-
-        signal(context, event) {
-          ee.emit('createSchedule', context);
         }
-
       }
     });
   }
 
 }
 function scheduleAppointment(name) {
-  const workflow = new AppointmentWorkflow(name || "my-workflow");
-  const current = workflow.fsm.service;
-  current.start();
-  current.send('REQUEST');
+  const workflow = new AppointmentWorkflow(name);
+  console.log(workflow); // const current = workflow.fsm.service
+  // current.start()
+  // current.send('REQUEST')
 }
 
 export { AppointmentWorkflow, scheduleAppointment };
